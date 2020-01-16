@@ -22,6 +22,7 @@ from aiodnsresolver import (
     ResourceRecord,
     pack,
     parse,
+    recvfrom,
 )
 
 
@@ -79,7 +80,7 @@ def DnsProxy(
 
         try:
             while True:
-                request_data, addr = await recvfrom(loop, sock, 512)
+                request_data, addr = await recvfrom(loop, [sock], 512)
                 await upstream_queue.put((request_data, addr))
         finally:
             # Finish upstream requests, which can add to to the downstream
@@ -206,36 +207,6 @@ def error(query, rcode):
         qid=query.qid, qr=RESPONSE, opcode=0, aa=0, tc=0, rd=0, ra=1, z=0, rcode=rcode,
         qd=query.qd, an=(), ns=(), ar=(),
     )
-
-
-async def recvfrom(loop, sock, max_bytes):
-    try:
-        return sock.recvfrom(max_bytes)
-    except BlockingIOError:
-        pass
-
-    def reader():
-        try:
-            (data, addr) = sock.recvfrom(max_bytes)
-        except BlockingIOError:
-            pass
-        except BaseException as exception:
-            loop.remove_reader(fileno)
-            if not result.done():
-                result.set_exception(exception)
-        else:
-            loop.remove_reader(fileno)
-            if not result.done():
-                result.set_result((data, addr))
-
-    fileno = sock.fileno()
-    result = Future()
-    loop.add_reader(fileno, reader)
-
-    try:
-        return await result
-    finally:
-        loop.remove_reader(fileno)
 
 
 async def sendto(loop, sock, data, addr):
