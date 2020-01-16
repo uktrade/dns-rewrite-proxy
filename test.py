@@ -74,6 +74,18 @@ class TestProxy(unittest.TestCase):
             await resolve('doesnotexist.charemza.name', TYPES.A)
 
     @async_test
+    async def test_e2e_default_resolver_match_all_bad_upstream(self):
+        resolve, clear_cache = get_resolver(53, timeout=100)
+        self.add_async_cleanup(clear_cache)
+
+        start = DnsProxy(rules=((r'(^.*$)', r'\1'),), get_resolver=lambda: get_resolver(54))
+        stop = await start()
+        self.add_async_cleanup(stop)
+
+        with self.assertRaises(DnsResponseCode):
+            await resolve('www.google.com', TYPES.A)
+
+    @async_test
     async def test_e2e_default_resolver_match_none_non_existing_domain(self):
         resolve, clear_cache = get_resolver(53)
         self.add_async_cleanup(clear_cache)
@@ -94,9 +106,9 @@ def get_socket(port):
     return _get_socket
 
 
-def get_resolver(port):
+def get_resolver(port, timeout=0.5):
     async def get_nameservers(_, __):
         for _ in range(0, 5):
-            yield (0.5, ('127.0.0.1', port))
+            yield (timeout, ('127.0.0.1', port))
 
     return Resolver(get_nameservers=get_nameservers)
