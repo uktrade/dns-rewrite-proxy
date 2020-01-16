@@ -1,13 +1,3 @@
-# We run a custom nameserver to respond to A record-requests
-#
-# - Conditionally proxy some requests to the VPC-DNS server [dnsmasq can do this]
-# - Respond with a CNAME to certain records [dnsmasq cannot do this]
-#
-# We _could_ wrap dnsmasq with some custom code, so it polls a file to work
-# out its CNAME limitation, and we asynchronously update that file, but since
-# we're already hitting its limit, suspect its overall less hacky to just
-# write a DNS server that response to requests in the way we want
-
 from asyncio import (
     CancelledError,
     Future,
