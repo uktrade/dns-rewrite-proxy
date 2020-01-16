@@ -73,6 +73,17 @@ class TestProxy(unittest.TestCase):
         with self.assertRaises(DnsRecordDoesNotExist):
             await resolve('doesnotexist.charemza.name', TYPES.A)
 
+    @async_test
+    async def test_e2e_default_resolver_match_none_non_existing_domain(self):
+        resolve, clear_cache = get_resolver(53)
+        self.add_async_cleanup(clear_cache)
+        start = DnsProxy()
+        stop = await start()
+        self.add_async_cleanup(stop)
+
+        with self.assertRaises(DnsResponseCode):
+            await resolve('doesnotexist.charemza.name', TYPES.A)
+
 
 def get_socket(port):
     def _get_socket():
