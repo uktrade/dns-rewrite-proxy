@@ -182,9 +182,12 @@ def DnsProxy(
         except DnsResponseCode as dns_response_code_error:
             return error(query, dns_response_code_error.args[0])
 
+        def ttl(ip_address):
+            return int(max(0.0, ip_address.expires_at - loop.time()))
+
         reponse_records = tuple(
             ResourceRecord(name=name_bytes, qtype=TYPES.A,
-                           qclass=1, ttl=5, rdata=ip_address.packed)
+                           qclass=1, ttl=ttl(ip_address), rdata=ip_address.packed)
             for ip_address in ip_addresses
         )
         return Message(
