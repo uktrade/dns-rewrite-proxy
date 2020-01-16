@@ -53,7 +53,7 @@ class TestProxy(unittest.TestCase):
     async def test_e2e_default_port_match_all(self):
         resolve, clear_cache = get_resolver(53)
         self.add_async_cleanup(clear_cache)
-        start = DnsProxy(rules=((r'(^.*$)', r'\1'),))
+        start = DnsProxy(get_socket=get_socket(53), rules=((r'(^.*$)', r'\1'),))
         stop = await start()
         self.add_async_cleanup(stop)
 
