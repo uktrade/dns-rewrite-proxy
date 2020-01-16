@@ -8,6 +8,7 @@ from aiodnsresolver import (
     Resolver,
     IPv4AddressExpiresAt,
     DnsResponseCode,
+    DnsRecordDoesNotExist,
 )
 from dnsrewriteproxy import (
     DnsProxy,
@@ -62,16 +63,15 @@ class TestProxy(unittest.TestCase):
         self.assertTrue(isinstance(response[0], IPv4AddressExpiresAt))
 
     @async_test
-    async def test_e2e_default_resolver_match_all(self):
-        resolve, clear_cache = Resolver()
+    async def test_e2e_default_resolver_match_all_non_existing_domain(self):
+        resolve, clear_cache = get_resolver(53)
         self.add_async_cleanup(clear_cache)
         start = DnsProxy(rules=((r'(^.*$)', r'\1'),))
         stop = await start()
         self.add_async_cleanup(stop)
 
-        response = await resolve('www.google.com', TYPES.A)
-
-        self.assertTrue(isinstance(response[0], IPv4AddressExpiresAt))
+        with self.assertRaises(DnsRecordDoesNotExist):
+            await resolve('doesnotexist.charemza.name', TYPES.A)
 
 
 def get_socket(port):
