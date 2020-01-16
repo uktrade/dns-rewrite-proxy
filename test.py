@@ -28,9 +28,9 @@ class TestProxy(unittest.TestCase):
 
     @async_test
     async def test_e2e_no_match_rule(self):
-        resolve, clear_cache = get_resolver()
+        resolve, clear_cache = get_resolver(3535)
         self.add_async_cleanup(clear_cache)
-        start = DnsProxy(get_socket=get_socket)
+        start = DnsProxy(get_socket=get_socket(3535))
         stop = await start()
         self.add_async_cleanup(stop)
 
@@ -39,9 +39,33 @@ class TestProxy(unittest.TestCase):
 
     @async_test
     async def test_e2e_match_all(self):
-        resolve, clear_cache = get_resolver()
+        resolve, clear_cache = get_resolver(3535)
         self.add_async_cleanup(clear_cache)
-        start = DnsProxy(get_socket=get_socket, rules=((r'(^.*$)', r'\1'),))
+        start = DnsProxy(get_socket=get_socket(3535), rules=((r'(^.*$)', r'\1'),))
+        stop = await start()
+        self.add_async_cleanup(stop)
+
+        response = await resolve('www.google.com', TYPES.A)
+
+        self.assertTrue(isinstance(response[0], IPv4AddressExpiresAt))
+
+    @async_test
+    async def test_e2e_default_port_match_all(self):
+        resolve, clear_cache = get_resolver(53)
+        self.add_async_cleanup(clear_cache)
+        start = DnsProxy(rules=((r'(^.*$)', r'\1'),))
+        stop = await start()
+        self.add_async_cleanup(stop)
+
+        response = await resolve('www.google.com', TYPES.A)
+
+        self.assertTrue(isinstance(response[0], IPv4AddressExpiresAt))
+
+    @async_test
+    async def test_e2e_default_resolver_match_all(self):
+        resolve, clear_cache = Resolver()
+        self.add_async_cleanup(clear_cache)
+        start = DnsProxy(rules=((r'(^.*$)', r'\1'),))
         stop = await start()
         self.add_async_cleanup(stop)
 
@@ -50,16 +74,18 @@ class TestProxy(unittest.TestCase):
         self.assertTrue(isinstance(response[0], IPv4AddressExpiresAt))
 
 
-def get_socket():
-    sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-    sock.setblocking(False)
-    sock.bind(('', 3535))
-    return sock
+def get_socket(port):
+    def _get_socket():
+        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        sock.setblocking(False)
+        sock.bind(('', port))
+        return sock
+    return _get_socket
 
 
-def get_resolver():
+def get_resolver(port):
     async def get_nameservers(_, __):
         for _ in range(0, 5):
-            yield (0.5, ('127.0.0.1', 3535))
+            yield (0.5, ('127.0.0.1', port))
 
     return Resolver(get_nameservers=get_nameservers)
