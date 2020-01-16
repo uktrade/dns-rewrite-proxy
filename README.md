@@ -5,10 +5,13 @@ A DNS proxy server that conditionally rewrites and filters A record requests
 
 ## Usage
 
+By default the proxy will listen on port 53, and proxy requests to the servers in `/etc/resolve.conf`. However, by default all requests are blocked without explicit rules, so to proxy requests you must configure at least one rewrite rule.
+
 ```python
 from dnsrewriteproxy import DnsProxy
 
-start = DnsProxy()
+# Proxy all incoming A record requests without any rewriting
+start = DnsProxy(rules=((r'(^.*$)', r'\1'),))
 
 # Proxy is running, accepting UDP requests on port 53
 stop = await start()

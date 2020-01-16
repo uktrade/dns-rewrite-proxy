@@ -19,6 +19,7 @@ from enum import (
     IntEnum,
 )
 import logging
+import re
 import socket
 
 from aiodnsresolver import (
@@ -61,6 +62,7 @@ def DnsProxy(
         get_resolver=get_resolver_default, get_logger=get_logger_default,
         get_socket=get_socket_default,
         num_workers=1000, downstream_queue_maxsize=10000, upstream_queue_maxsize=10000,
+        rules=(),
 ):
 
     class ERRORS(IntEnum):
@@ -165,8 +167,16 @@ def DnsProxy(
         name_bytes = query.qd[0].name
         name_str = query.qd[0].name.decode('idna')
 
+        for pattern, replace in rules:
+            rewritten_name_str, num_matches = re.subn(pattern, replace, name_str)
+            if num_matches:
+                break
+        else:
+            # No break was triggered, i.e. no match
+            return error(query, ERRORS.REFUSED)
+
         try:
-            ip_addresses = await resolve(name_str, TYPES.A)
+            ip_addresses = await resolve(rewritten_name_str, TYPES.A)
         except DnsRecordDoesNotExist:
             return error(query, ERRORS.NXDOMAIN)
         except DnsResponseCode as dns_response_code_error:
