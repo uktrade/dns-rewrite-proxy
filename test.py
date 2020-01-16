@@ -35,8 +35,10 @@ class TestProxy(unittest.TestCase):
         stop = await start()
         self.add_async_cleanup(stop)
 
-        with self.assertRaises(DnsResponseCode):
+        with self.assertRaises(DnsResponseCode) as cm:
             await resolve('www.google.com', TYPES.A)
+
+        self.assertEqual(cm.exception.args[0], 5)
 
     @async_test
     async def test_e2e_match_all(self):
@@ -82,8 +84,10 @@ class TestProxy(unittest.TestCase):
         stop = await start()
         self.add_async_cleanup(stop)
 
-        with self.assertRaises(DnsResponseCode):
+        with self.assertRaises(DnsResponseCode) as cm:
             await resolve('www.google.com', TYPES.A)
+
+        self.assertEqual(cm.exception.args[0], 2)
 
     @async_test
     async def test_e2e_default_resolver_match_none_non_existing_domain(self):
@@ -93,8 +97,10 @@ class TestProxy(unittest.TestCase):
         stop = await start()
         self.add_async_cleanup(stop)
 
-        with self.assertRaises(DnsResponseCode):
+        with self.assertRaises(DnsResponseCode) as cm:
             await resolve('doesnotexist.charemza.name', TYPES.A)
+
+        self.assertEqual(cm.exception.args[0], 5)
 
 
 def get_socket(port):
