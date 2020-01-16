@@ -102,6 +102,49 @@ class TestProxy(unittest.TestCase):
 
         self.assertEqual(cm.exception.args[0], 5)
 
+    @async_test
+    async def test_many_of_responses_with_small_socket_buffer(self):
+        resolve, clear_cache = get_resolver(53)
+        self.add_async_cleanup(clear_cache)
+
+        def get_small_socket():
+            sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 2000)
+            sock.setblocking(False)
+            sock.bind(('', 53))
+            return sock
+
+        def get_fixed_resolver():
+            async def get_host(_, fqdn, qtype):
+                hosts = {
+                    b'www.google.com': {
+                        TYPES.A: IPv4AddressExpiresAt('1.2.3.4', expires_at=0),
+                    },
+                }
+                try:
+                    return hosts[fqdn.lower()][qtype]
+                except KeyError:
+                    print('NONE!')
+                    return None
+
+            return Resolver(get_host=get_host)
+
+        start = DnsProxy(rules=((r'(^.*$)', r'\1'),), get_socket=get_small_socket,
+                         get_resolver=get_fixed_resolver)
+        stop = await start()
+        self.add_async_cleanup(stop)
+
+        tasks = [
+            asyncio.create_task(resolve('www.google.com', TYPES.A))
+            for _ in range(0, 100000)
+        ]
+
+        responses = []
+        for task in tasks:
+            responses.append(await task)
+
+        self.assertEqual(str(responses[0][0]), '1.2.3.4')
+
 
 def get_socket(port):
     def _get_socket():
