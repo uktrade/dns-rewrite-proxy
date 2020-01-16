@@ -53,9 +53,6 @@ def DnsProxy(
         NXDOMAIN = 3
         REFUSED = 5
 
-        def __str__(self):
-            return self.name
-
     loop = get_running_loop()
     logger = get_logger()
 
