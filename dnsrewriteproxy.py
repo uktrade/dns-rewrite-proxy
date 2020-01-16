@@ -36,14 +36,6 @@ def get_resolver_default():
     return Resolver()
 
 
-def get_resolver_with_upstream(upstream):
-    async def get_nameservers(_, __):
-        for _ in range(0, 5):
-            yield (0.5, (upstream, 53))
-
-    return Resolver(get_nameservers=get_nameservers)
-
-
 def get_logger_default():
     return logging.getLogger('dnsrewriteproxy')
 
