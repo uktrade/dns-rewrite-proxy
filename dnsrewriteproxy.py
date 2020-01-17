@@ -82,7 +82,7 @@ def DnsProxy(
             for upstream_task in upstream_worker_tasks:
                 try:
                     await upstream_task
-                except Exception:
+                except CancelledError:
                     pass
 
     async def upstream_worker(sock, resolve, upstream_queue):
