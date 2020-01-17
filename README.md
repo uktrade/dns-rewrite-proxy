@@ -20,7 +20,7 @@ stop = await start()
 await stop()
 ```
 
-The `rules` parameter must be an iterable [e.g. a list or a tuple] of tuples, where each tuple is regex pattern/replacement pair, passed to [re.subn](https://docs.python.org/3/library/re.html#re.subn) under the hood. On each incoming DNS request
+The `rules` parameter must be an iterable [e.g. a list or a tuple] of tuples, where each tuple is regex pattern/replacement pair, passed to [re.subn](https://docs.python.org/3/library/re.html#re.subn) under the hood. On each incoming DNS request for a domain
 
 - this list is iterated over;
 - the first rule that matches the incoming domain name is used to rewrite the domain, the upstream DNS server is queries for A records, and these records, or error code, is returned downstream;
