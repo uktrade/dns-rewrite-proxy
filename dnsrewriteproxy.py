@@ -117,10 +117,10 @@ def DnsProxy(
 
     async def proxy(resolve, query):
         name_bytes = query.qd[0].name
-        name_str = query.qd[0].name.decode('idna')
+        name_str_lower = query.qd[0].name.lower().decode('idna')
 
         for pattern, replace in rules:
-            rewritten_name_str, num_matches = re.subn(pattern, replace, name_str)
+            rewritten_name_str, num_matches = re.subn(pattern, replace, name_str_lower)
             if num_matches:
                 break
         else:

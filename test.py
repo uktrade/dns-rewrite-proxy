@@ -86,6 +86,17 @@ class TestProxy(unittest.TestCase):
             await resolve('doesnotexist.charemza.name', TYPES.A)
 
     @async_test
+    async def test_e2e_default_resolver_rewrite_non_existing_to_existing(self):
+        resolve, clear_cache = get_resolver(53)
+        self.add_async_cleanup(clear_cache)
+        start = DnsProxy(rules=((r'^doesnotexist\.charemza\.name$', r'www.google.com'),))
+        stop = await start()
+        self.add_async_cleanup(stop)
+
+        response = await resolve('doesnotexist.charemza.name', TYPES.A)
+        self.assertEqual(type(response[0]), IPv4AddressExpiresAt)
+
+    @async_test
     async def test_e2e_default_resolver_match_all_bad_upstream(self):
         resolve, clear_cache = get_resolver(53, timeout=100)
         self.add_async_cleanup(clear_cache)
