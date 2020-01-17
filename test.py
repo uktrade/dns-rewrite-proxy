@@ -7,6 +7,7 @@ import unittest
 
 from aiodnsresolver import (
     RESPONSE,
+    QUESTION,
     TYPES,
     DnsRecordDoesNotExist,
     DnsResponseCode,
@@ -124,7 +125,7 @@ class TestProxy(unittest.TestCase):
         self.assertEqual(cm.exception.args[0], 5)
 
     @async_test
-    async def test_many_responses_with_small_socket_buffer(self):
+    async def test_many_responses_with_small_socket_buffer_no_onward_query(self):
         resolve, clear_cache = get_resolver(53)
         self.add_async_cleanup(clear_cache)
 
@@ -142,6 +143,53 @@ class TestProxy(unittest.TestCase):
 
         for response in responses:
             self.assertEqual(str(response[0]), '1.2.3.4')
+
+        bing_responses = await resolve('www.bing.com', TYPES.A)
+        self.assertEqual(type(bing_responses[0]), IPv4AddressExpiresAt)
+
+    @async_test
+    async def test_many_responses_with_small_socket_buffer_onward_query(self):
+        start = DnsProxy(rules=((r'(^.*$)', r'\1'),), get_socket=get_small_socket)
+        stop = await start()
+        self.add_async_cleanup(stop)
+
+        async def resolve(domain):
+            resolve, clear_cache = get_resolver(53)
+            result = await resolve(domain, TYPES.A)
+            await clear_cache()
+            return result
+
+        tasks = [
+            asyncio.create_task(resolve('www.google.com'))
+            for _ in range(0, 1000)
+        ]
+
+        responses = await asyncio.gather(*tasks)
+
+        for response in responses:
+            self.assertEqual(type(response[0]), IPv4AddressExpiresAt)
+
+        bing_responses = await resolve('www.bing.com')
+        self.assertEqual(type(bing_responses[0]), IPv4AddressExpiresAt)
+
+    @async_test
+    async def test_many_responses_with_regular_socket_buffer_onward_query(self):
+        resolve, clear_cache = get_resolver(53)
+        self.add_async_cleanup(clear_cache)
+
+        start = DnsProxy(rules=((r'(^.*$)', r'\1'),))
+        stop = await start()
+        self.add_async_cleanup(stop)
+
+        tasks = [
+            asyncio.create_task(resolve('www.google.com', TYPES.A))
+            for _ in range(0, 100000)
+        ]
+
+        responses = await asyncio.gather(*tasks)
+
+        for response in responses:
+            self.assertEqual(type(response[0]), IPv4AddressExpiresAt)
 
         bing_responses = await resolve('www.bing.com', TYPES.A)
         self.assertEqual(type(bing_responses[0]), IPv4AddressExpiresAt)
@@ -228,6 +276,33 @@ class TestProxy(unittest.TestCase):
         responses = await asyncio.gather(*tasks)
         for response in responses:
             self.assertEqual(type(response[0]), IPv4AddressExpiresAt)
+
+    @async_test
+    async def test_sending_lots_of_good_messages_not_affect_later_queries(self):
+        resolve, clear_cache = get_resolver(53)
+        self.add_async_cleanup(clear_cache)
+
+        start = DnsProxy(rules=((r'(^.*$)', r'\1'),))
+        stop = await start()
+        self.add_async_cleanup(stop)
+
+        response = await resolve('www.google.com', TYPES.A)
+        self.assertEqual(type(response[0]), IPv4AddressExpiresAt)
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        for i in range(0, 100000):
+            name = b'doesnotexist' + str(i).encode('ascii') + b'.charemza.name'
+            question_record = QuestionRecord(name, TYPES.A, qclass=1)
+            question = Message(
+                qid=i % 65535, qr=QUESTION, opcode=0, aa=0, tc=0, rd=0, ra=1, z=0, rcode=0,
+                qd=(question_record,), an=(), ns=(), ar=(),
+            )
+            sock.sendto(pack(question), ('127.0.0.1', 53))
+        sock.close()
+
+        response = await resolve('www.google.com', TYPES.A)
+        self.assertEqual(type(response[0]), IPv4AddressExpiresAt)
 
     @async_test
     async def test_sending_pointer_loop_not_affect_later_queries_c(self):
@@ -352,7 +427,7 @@ def get_small_socket():
     return sock
 
 
-def get_resolver(port, timeout=0.5):
+def get_resolver(port, timeout=2.0):
     async def get_nameservers(_, __):
         for _ in range(0, 5):
             yield (timeout, ('127.0.0.1', port))
