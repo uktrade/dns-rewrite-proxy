@@ -42,8 +42,7 @@ def get_logger_default():
 
 def DnsProxy(
         get_resolver=get_resolver_default, get_logger=get_logger_default,
-        get_socket=get_socket_default,
-        num_workers=1000, upstream_queue_maxsize=10000,
+        get_socket=get_socket_default, num_workers=1000,
         rules=(),
 ):
 
@@ -61,7 +60,7 @@ def DnsProxy(
     # workers
 
     async def server_worker(sock, resolve):
-        upstream_queue = Queue(maxsize=upstream_queue_maxsize)
+        upstream_queue = Queue(maxsize=num_workers)
 
         # We have multiple upstream workers to be able to send multiple
         # requests upstream concurrently, and add responses to downstream_queue
