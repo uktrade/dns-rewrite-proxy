@@ -133,9 +133,6 @@ def DnsProxy(
         # be able to match it with an outgoing request
         query = parse(request_data)
 
-        if not query.qd:
-            return pack(error(query, ERRORS.REFUSED))
-
         try:
             return pack(
                 error(query, ERRORS.REFUSED) if query.qd[0].qtype != TYPES.A else
