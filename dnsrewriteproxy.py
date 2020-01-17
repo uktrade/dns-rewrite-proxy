@@ -1,6 +1,5 @@
 from asyncio import (
     CancelledError,
-    Future,
     Queue,
     create_task,
     get_running_loop,
@@ -121,7 +120,10 @@ def DnsProxy(
     async def downstream_worker(sock, downstream_queue):
         while True:
             response_data, addr = await downstream_queue.get()
-            await sendto(loop, sock, response_data, addr)
+            try:
+                await sendto(sock, response_data, addr)
+            except Exception:
+                logger.exception('Unable to send response to %s', addr)
             downstream_queue.task_done()
 
     async def get_response_data(resolve, request_data):
@@ -209,37 +211,15 @@ def error(query, rcode):
     )
 
 
-async def sendto(loop, sock, data, addr):
+async def sendto(sock, data, addr):
     # In our cases, the UDP responses will always be 512 bytes or less.
     # Even if sendto sent some of the data, there is no way for the other
     # end to reconstruct their order, so we don't include any logic to send
     # the rest of the data. Since it's UDP, the client already has to have
-    # retry logic
-
-    try:
-        return sock.sendto(data, addr)
-    except BlockingIOError:
-        pass
-
-    def writer():
-        try:
-            num_bytes = sock.sendto(data, addr)
-        except BlockingIOError:
-            pass
-        except BaseException as exception:
-            loop.remove_writer(fileno)
-            if not result.done():
-                result.set_exception(exception)
-        else:
-            loop.remove_writer(fileno)
-            if not result.done():
-                result.set_result(num_bytes)
-
-    fileno = sock.fileno()
-    result = Future()
-    loop.add_writer(fileno, writer)
-
-    try:
-        return await result
-    finally:
-        loop.remove_writer(fileno)
+    # retry logic.
+    #
+    # Potentially also, this can raise a BlockingIOError, but even trying
+    # to force high numbers of messages with a small socket buffer, this has
+    # never been observed. As above, the client must have retry logic, so we
+    # leave it to the client to deal with this.
+    return sock.sendto(data, addr)
