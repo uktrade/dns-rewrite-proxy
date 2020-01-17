@@ -63,7 +63,7 @@ def DnsProxy(
         upstream_queue = Queue(maxsize=num_workers)
 
         # We have multiple upstream workers to be able to send multiple
-        # requests upstream concurrently, and add responses to downstream_queue
+        # requests upstream concurrently
         upstream_worker_tasks = [
             create_task(upstream_worker(sock, resolve, upstream_queue))
             for _ in range(0, num_workers)]
