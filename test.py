@@ -50,7 +50,7 @@ class TestProxy(unittest.TestCase):
 
         response = await resolve('www.google.com', TYPES.A)
 
-        self.assertTrue(isinstance(response[0], IPv4AddressExpiresAt))
+        self.assertEqual(type(response[0]), IPv4AddressExpiresAt)
 
     @async_test
     async def test_e2e_default_port_match_all(self):
@@ -62,7 +62,7 @@ class TestProxy(unittest.TestCase):
 
         response = await resolve('www.google.com', TYPES.A)
 
-        self.assertTrue(isinstance(response[0], IPv4AddressExpiresAt))
+        self.assertEqual(type(response[0]), IPv4AddressExpiresAt)
 
     @async_test
     async def test_e2e_default_resolver_match_all_non_existing_domain(self):
@@ -123,7 +123,7 @@ class TestProxy(unittest.TestCase):
             self.assertEqual(str(response[0]), '1.2.3.4')
 
         bing_responses = await resolve('www.bing.com', TYPES.A)
-        self.assertTrue(isinstance(bing_responses[0], IPv4AddressExpiresAt))
+        self.assertEqual(type(bing_responses[0]), IPv4AddressExpiresAt)
 
 
 def get_socket(port):
