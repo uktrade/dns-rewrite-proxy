@@ -2,6 +2,8 @@
 
 A DNS proxy server that conditionally rewrites and filters A record requests. Written in Python, all code is in a single module, and there is a single dependency, [aiodnsresolver](https://github.com/michalc/aiodnsresolver).
 
+CNAMEs are followed and resolved by the proxy to IP addresses, and never returned to the client.
+
 
 ## Usage
 
@@ -27,3 +29,20 @@ The `rules` parameter must be an iterable [e.g. a list or a tuple] of tuples, wh
 - and if no rule matches a REFUSED response is returned downstream.
 
 The response of REFUSED is deliberate for clients to be able to help differentiate between a configuration issue on the proxy, the proxy not working or not being contactable, and a domain actually not existing.
+
+So to rewrite all queries for `www.source.com` to `www.target.com`, and to _refuse_ to proxy any others, you can use the following configuration.
+
+```python
+start = DnsProxy(rules=(
+    (r'^www\.source\.com$', r'www.target.com'),
+))
+```
+
+Alternatively, do the same rewriting, but to _allow_ all other requests, you can use the following.
+
+```python
+start = DnsProxy(rules=(
+    (r'^www\.source\.com$', r'www.target.com'),
+    (r'(^.*$)', r'\1'),
+))
+```
