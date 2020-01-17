@@ -19,3 +19,11 @@ stop = await start()
 # Stopped
 await stop()
 ```
+
+The `rules` parameter must be an iterable [e.g. a list or a tuple] of tuples, where each tuple is regex pattern/replacement pair, passed to [re.subn](https://docs.python.org/3/library/re.html#re.subn) under the hood. On each incoming DNS request
+
+- this list is iterated over;
+- the first rule that matches the incoming domain name is used to rewrite the domain, the upstream DNS server is queries for A records, and these records, or error code, is returned downstream;
+- and if no rule matches, the request fails, with a REFUSED response returned.
+
+The response of REFUSED is deliberate for clients to be able to help differentiate between a configuration issue on the proxy, the proxy not working or not being contactable, and a domain actually not existing.
