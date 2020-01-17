@@ -111,11 +111,11 @@ def DnsProxy(
                 response_data = await get_response_data(resolve, request_data)
             except Exception:
                 logger.exception('Exception from handler_request_data %s', addr)
-                upstream_queue.task_done()
                 continue
-
-            await downstream_queue.put((response_data, addr))
-            upstream_queue.task_done()
+            else:
+                await downstream_queue.put((response_data, addr))
+            finally:
+                upstream_queue.task_done()
 
     async def downstream_worker(sock, downstream_queue):
         while True:
