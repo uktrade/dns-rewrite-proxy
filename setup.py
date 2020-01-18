@@ -14,7 +14,7 @@ setuptools.setup(
     description='A DNS proxy server that conditionally rewrites and filters A record requests',
     long_description=long_description(),
     long_description_content_type='text/markdown',
-    url='https://github.com/uktrade/dnsrewriteproxy',
+    url='https://github.com/uktrade/dns-rewrite-proxy',
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
