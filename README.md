@@ -86,3 +86,33 @@ try:
 except asyncio.CancelledError:
     pass
 ```
+
+
+### Graceful shutdown example
+
+A full example of a server that would do a graceful shutdown on SIGINT or SIGTERM is below.
+
+```python
+import asyncio
+import signal
+
+from dnsrewriteproxy import (
+    DnsProxy,
+)
+
+async def async_main():
+    start = DnsProxy(rules=((r'(^.*$)', r'\1'),))
+    proxy_task = await start()
+
+    loop.add_signal_handler(signal.SIGINT, proxy_task.cancel)
+    loop.add_signal_handler(signal.SIGTERM, proxy_task.cancel)
+
+    try:
+        await proxy_task
+    except asyncio.CancelledError:
+        pass
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(async_main())
+print('End of program')
+```
