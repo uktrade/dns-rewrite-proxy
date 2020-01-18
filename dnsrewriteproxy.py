@@ -59,7 +59,7 @@ def DnsProxy(
     # them in a queue that is then fetched from and processed by the proxy
     # workers
 
-    async def server_worker(sock, resolve):
+    async def server_worker(sock, resolve, stop):
         upstream_queue = Queue(maxsize=num_workers)
 
         # We have multiple upstream workers to be able to send multiple
@@ -83,6 +83,8 @@ def DnsProxy(
                     await upstream_task
                 except CancelledError:
                     pass
+
+            await stop()
 
     async def upstream_worker(sock, resolve, upstream_queue):
         while True:
@@ -158,19 +160,12 @@ def DnsProxy(
         # /etc/hosts or /etc/resolve.conf, and can raise an exception if
         # something goes wrong with that
         resolve, clear_cache = get_resolver()
-        server_worker_task = create_task(server_worker(sock, resolve))
 
         async def stop():
-            server_worker_task.cancel()
-            try:
-                await server_worker_task
-            except CancelledError:
-                pass
-
             sock.close()
             await clear_cache()
 
-        return stop
+        return create_task(server_worker(sock, resolve, stop))
 
     return start
 

@@ -15,11 +15,8 @@ from dnsrewriteproxy import DnsProxy
 # Proxy all incoming A record requests without any rewriting
 start = DnsProxy(rules=((r'(^.*$)', r'\1'),))
 
-# Proxy is running, accepting UDP requests on port 53
-stop = await start()
-
-# Stopped
-await stop()
+# Run proxy, accepting UDP requests on port 53
+await start()
 ```
 
 The `rules` parameter must be an iterable [e.g. a list or a tuple] of tuples, where each tuple is regex pattern/replacement pair, passed to [re.subn](https://docs.python.org/3/library/re.html#re.subn) under the hood. On each incoming DNS request from downstream for a domain
@@ -45,4 +42,47 @@ start = DnsProxy(rules=(
     (r'^www\.source\.com$', r'www.target.com'),
     (r'(^.*$)', r'\1'),
 ))
+```
+
+
+## Server lifecycle
+
+In the above example `await start()` completes just after the server has started listening. The coroutine `start` returns the underlying _task_ to give control over the server lifecycle. A task can be seen as an "asyncio thread"; this is exposed to allow the server to sit in a larger asyncio Python program that may have a specific startup/shutdown procedure.
+
+
+### Run forever
+
+You can run the server forever [or until it hits some non-recoverable error] by awaiting this task.
+
+```python
+from dnsrewriteproxy import DnsProxy
+
+start = DnsProxy(rules=((r'(^.*$)', r'\1'),))
+server_task = await start()
+
+# Waiting here until the server is stopped
+await server_task
+```
+
+
+### Stopping the server
+
+To stop the server, you can `cancel` the returned task.
+
+```python
+from dnsrewriteproxy import DnsProxy
+
+start = DnsProxy(rules=((r'(^.*$)', r'\1'),))
+proxy_task = await start()
+
+# ... Receive requests
+
+# Initiate stopping: new requests will not be processed...
+proxy_task.cancel()
+
+try:
+    # ... and we wait until previously received requests have been processed
+    await proxy_task
+except asyncio.CancelledError:
+    pass
 ```
