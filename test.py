@@ -446,7 +446,7 @@ class TestProxy(unittest.TestCase):
         # Start a set of requests
         tasks = [
             asyncio.create_task(resolve('www.google.com'))
-            for _ in range(0, 1000)
+            for _ in range(0, 100)
         ]
         await received_request.wait()
 
@@ -456,8 +456,8 @@ class TestProxy(unittest.TestCase):
         # ... start a new request
         after_cancel_task = asyncio.create_task(resolve('www.bing.com'))
 
-        # ... wait 5 seconds
-        await asyncio.sleep(0.5)
+        # ... wait to try to ensure the request would have been received
+        await asyncio.sleep(0.2)
 
         # ... then finally the upstream server continues with the processing
         # of the requests received before cancellation
