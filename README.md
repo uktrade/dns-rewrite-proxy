@@ -7,7 +7,7 @@ CNAMEs are followed and resolved by the proxy to IP addresses, and never returne
 
 ## Usage
 
-By default the proxy will listen on port 53, and proxy requests to the servers in `/etc/resolve.conf`. However, by default all requests are blocked without explicit rules, so to proxy requests you must configure at least one rewrite rule.
+By default the proxy will listen on port 53, and proxy requests to the servers in `/etc/resolv.conf`. However, by default all requests are blocked without explicit rules, so to proxy requests you must configure at least one rewrite rule.
 
 ```python
 from dnsrewriteproxy import DnsProxy
@@ -41,6 +41,25 @@ Alternatively, do the same rewriting, but to _allow_ all other requests, you can
 start = DnsProxy(rules=(
     (r'^www\.source\.com$', r'www.target.com'),
     (r'(^.*$)', r'\1'),
+))
+```
+
+To proxy to a server other than that specified in `/etc/resolv.conf`, you can pass a customised `Resolver` via `get_resolver`.
+
+
+```python
+from aiodnsresolver import Resolver
+from dnsrewriteproxy import DnsProxy
+
+def get_resolver():
+    async def get_nameservers(_, __):
+        for _ in range(0, 5):
+            yield (0.5, ('8.8.8.8', 53))
+    return Resolver(get_nameserver=get_nameservers)
+
+start = DnsProxy(rules=(
+    (r'(^.*$)', r'\1'),
+    get_resolver=get_resolver,
 ))
 ```
 
