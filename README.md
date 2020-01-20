@@ -57,10 +57,10 @@ def get_resolver():
             yield (0.5, ('8.8.8.8', 53))
     return Resolver(get_nameserver=get_nameservers)
 
-start = DnsProxy(rules=(
-    (r'(^.*$)', r'\1'),
+start = DnsProxy(
+    rules=((r'(^.*$)', r'\1'),),
     get_resolver=get_resolver,
-))
+)
 ```
 
 
