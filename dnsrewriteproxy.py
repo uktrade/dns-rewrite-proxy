@@ -120,21 +120,28 @@ def DnsProxy(
         name_bytes = query.qd[0].name
         name_str_lower = query.qd[0].name.lower().decode('idna')
 
+        logger.info('%s: decoded to %s', name_bytes, name_str_lower)
+
         for pattern, replace in rules:
             rewritten_name_str, num_matches = re.subn(pattern, replace, name_str_lower)
             if num_matches:
                 break
         else:
             # No break was triggered, i.e. no match
+            logger.info('%s: does not match a rule', name_str_lower)
             return error(query, ERRORS.REFUSED)
 
         try:
             ip_addresses = await resolve(rewritten_name_str, TYPES.A)
         except DnsRecordDoesNotExist:
+            logger.info('%s: does not exist', name_str_lower)
             return error(query, ERRORS.NXDOMAIN)
         except DnsResponseCode as dns_response_code_error:
+            logger.info('%s: received error frum upstream %s',
+                        name_str_lower, dns_response_code_error.args[0])
             return error(query, dns_response_code_error.args[0])
 
+        logger.info('%s: resolved to %s', name_str_lower, ip_addresses)
         now = loop.time()
 
         def ttl(ip_address):
