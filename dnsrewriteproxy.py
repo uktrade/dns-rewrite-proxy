@@ -160,6 +160,7 @@ def DnsProxy(
         for pattern, replace in rules:
             rewritten_name_str, num_matches = re.subn(pattern, replace, name_str_lower)
             if num_matches:
+                request_logger.info('Matches rule (%s, %s)', pattern, replace)
                 break
         else:
             # No break was triggered, i.e. no match
