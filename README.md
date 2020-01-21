@@ -123,6 +123,7 @@ async def async_main():
     start = DnsProxy(rules=((r'(^.*$)', r'\1'),))
     proxy_task = await start()
 
+    loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGINT, proxy_task.cancel)
     loop.add_signal_handler(signal.SIGTERM, proxy_task.cancel)
 
@@ -131,7 +132,6 @@ async def async_main():
     except asyncio.CancelledError:
         pass
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(async_main())
+asyncio.run(async_main())
 print('End of program')
 ```
