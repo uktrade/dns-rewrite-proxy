@@ -101,10 +101,6 @@ def DnsProxy(
                     {'dnsrewriteproxy_requestid': ''.join(choices(request_id_alphabet, k=8))})
                 request_logger.info('Received request from %s', addr)
                 await upstream_queue.put((request_logger, request_data, addr))
-        except CancelledError:
-            pass
-        except Exception:
-            logger.exception('Error in main loop')
         finally:
             logger.info('Stopping: waiting for requests to finish')
             await upstream_queue.join()
