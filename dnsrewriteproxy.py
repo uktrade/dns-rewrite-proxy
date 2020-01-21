@@ -155,7 +155,7 @@ def DnsProxy(
         request_logger.info('Name: %s', name_bytes)
 
         name_str_lower = query.qd[0].name.lower().decode('idna')
-        request_logger.info('Decoded: %s', name_bytes)
+        request_logger.info('Decoded: %s', name_str_lower)
 
         for pattern, replace in rules:
             rewritten_name_str, num_matches = re.subn(pattern, replace, name_str_lower)
