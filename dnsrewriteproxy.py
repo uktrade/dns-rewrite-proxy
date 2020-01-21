@@ -85,7 +85,6 @@ def DnsProxy(
     # workers
 
     async def server_worker(sock, resolve, stop):
-        logger.info('Starting')
         upstream_queue = Queue(maxsize=num_workers)
 
         # We have multiple upstream workers to be able to send multiple
@@ -96,6 +95,7 @@ def DnsProxy(
 
         try:
             while True:
+                logger.info('Waiting for next request')
                 request_data, addr = await recvfrom(loop, [sock], 512)
                 request_logger = get_logger_adapter(
                     {'dnsrewriteproxy_requestid': ''.join(choices(request_id_alphabet, k=8))})
@@ -175,7 +175,7 @@ def DnsProxy(
             return error(query, ERRORS.NXDOMAIN)
         except DnsResponseCode as dns_response_code_error:
             request_logger.info('Received error from upstream: %s',
-                                name_str_lower, dns_response_code_error.args[0])
+                                dns_response_code_error.args[0])
             return error(query, dns_response_code_error.args[0])
 
         request_logger.info('Resolved to %s', ip_addresses)
