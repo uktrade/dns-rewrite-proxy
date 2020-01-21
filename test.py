@@ -64,6 +64,19 @@ class TestProxy(unittest.TestCase):
         self.assertEqual(type(response[0]), IPv4AddressExpiresAt)
 
     @async_test
+    async def test_e2e_match_all_wrong_type(self):
+        resolve, clear_cache = get_resolver(3535)
+        self.add_async_cleanup(clear_cache)
+        start = DnsProxy(get_socket=get_socket(3535), rules=((r'(^.*$)', r'\1'),))
+        server_task = await start()
+        self.add_async_cleanup(await_cancel, server_task)
+
+        with self.assertRaises(DnsResponseCode) as cm:
+            await resolve('www.google.com', TYPES.AAAA)
+
+        self.assertEqual(cm.exception.args[0], 5)
+
+    @async_test
     async def test_e2e_default_port_match_all(self):
         resolve, clear_cache = get_resolver(53)
         self.add_async_cleanup(clear_cache)

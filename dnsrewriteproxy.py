@@ -143,10 +143,7 @@ def DnsProxy(
         query = parse(request_data)
 
         try:
-            return pack(
-                error(query, ERRORS.REFUSED) if query.qd[0].qtype != TYPES.A else
-                (await proxy(request_logger, resolve, query))
-            )
+            return pack(await proxy(request_logger, resolve, query))
         except Exception:
             request_logger.exception('Failed to proxy %s', query)
             return pack(error(query, ERRORS.SERVFAIL))
@@ -157,6 +154,10 @@ def DnsProxy(
 
         name_str_lower = query.qd[0].name.lower().decode('idna')
         request_logger.info('Decoded: %s', name_str_lower)
+
+        if query.qd[0].qtype != TYPES.A:
+            request_logger.info('Unhandled query type: %s', query.qd[0].qtype)
+            return error(query, ERRORS.REFUSED)
 
         for pattern, replace in rules:
             rewritten_name_str, num_matches = re.subn(pattern, replace, name_str_lower)
