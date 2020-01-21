@@ -124,14 +124,15 @@ def DnsProxy(
             request_logger, request_data, addr = await upstream_queue.get()
 
             try:
-                request_logger.info('Processing request from %s', addr)
+                request_logger.info('Processing request')
                 response_data = await get_response_data(request_logger, resolve, request_data)
                 # Sendto for non-blocking UDP sockets cannot raise a BlockingIOError
                 # https://stackoverflow.com/a/59794872/1319998
                 sock.sendto(response_data, addr)
             except Exception:
-                request_logger.exception('Processing request from %s', addr)
+                request_logger.exception('Error processing request')
             finally:
+                request_logger.info('Finished processing request')
                 upstream_queue.task_done()
 
     async def get_response_data(request_logger, resolve, request_data):
