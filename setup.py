@@ -8,7 +8,7 @@ def long_description():
 
 setuptools.setup(
     name='dnsrewriteproxy',
-    version='0.0.12',
+    version='0.0.13',
     author='Department for International Trade',
     author_email='webops@digital.trade.gov.uk',
     description='A DNS proxy server that conditionally rewrites and filters A record requests',
