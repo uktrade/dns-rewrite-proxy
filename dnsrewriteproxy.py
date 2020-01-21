@@ -130,7 +130,7 @@ def DnsProxy(
                 # https://stackoverflow.com/a/59794872/1319998
                 sock.sendto(response_data, addr)
             except Exception:
-                logger.exception('Processing request from %s', addr)
+                request_logger.exception('Processing request from %s', addr)
             finally:
                 upstream_queue.task_done()
 
