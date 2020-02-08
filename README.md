@@ -5,6 +5,13 @@ A DNS proxy server that conditionally rewrites and filters A record requests. Wr
 CNAMEs are followed and resolved by the proxy to IP addresses, and never returned to the client.
 
 
+## Installation
+
+```bash
+pip install dnsrewriteproxy
+```
+
+
 ## Usage
 
 By default the proxy will listen on port 53, and proxy requests to the servers in `/etc/resolv.conf`. However, by default all requests are blocked without explicit rules, so to proxy requests you must configure at least one rewrite rule.
