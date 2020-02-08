@@ -41,10 +41,6 @@ def get_resolver_default():
     return Resolver()
 
 
-def get_logger_default():
-    return logging.getLogger('dnsrewriteproxy')
-
-
 class DnsProxyLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
         return \
