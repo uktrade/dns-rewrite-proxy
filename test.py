@@ -46,10 +46,8 @@ class TestProxy(unittest.TestCase):
         server_task = await start()
         self.add_async_cleanup(await_cancel, server_task)
 
-        with self.assertRaises(DnsResponseCode) as cm:
+        with self.assertRaises(DnsRecordDoesNotExist) as cm:
             await resolve('www.google.com', TYPES.A)
-
-        self.assertEqual(cm.exception.args[0], 5)
 
     @async_test
     async def test_e2e_match_all(self):
@@ -132,10 +130,8 @@ class TestProxy(unittest.TestCase):
         server_task = await start()
         self.add_async_cleanup(await_cancel, server_task)
 
-        with self.assertRaises(DnsResponseCode) as cm:
+        with self.assertRaises(DnsRecordDoesNotExist) as cm:
             await resolve('doesnotexist.charemza.name', TYPES.A)
-
-        self.assertEqual(cm.exception.args[0], 5)
 
     @async_test
     async def test_many_responses_with_small_socket_buffer_no_onward_query(self):

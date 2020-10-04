@@ -163,7 +163,7 @@ def DnsProxy(
         else:
             # No break was triggered, i.e. no match
             request_logger.info('Does not match a rule')
-            return error(query, ERRORS.REFUSED)
+            return error(query, ERRORS.NXDOMAIN)
 
         try:
             ip_addresses = await resolve(

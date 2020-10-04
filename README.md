@@ -30,9 +30,9 @@ The `rules` parameter must be an iterable [e.g. a list or a tuple] of tuples, wh
 
 - this list is iterated over;
 - the first rule that matches the incoming domain name is used to rewrite the domain, the upstream DNS server is queried for A records, and these records, or error code, is returned downstream;
-- and if no rule matches a REFUSED response is returned downstream.
+- and if no rule matches a NXDOMAIN response is returned downstream.
 
-The response of REFUSED is deliberate for clients to be able to help differentiate between a configuration issue on the proxy, the proxy not working or not being contactable, and a domain actually not existing.
+The response of NXDOMAIN is deliberate, since clients often expect domains to not exist, and are more likely to gracefully handle errors.
 
 So to rewrite all queries for `www.source.com` to `www.target.com`, and to _refuse_ to proxy any others, you can use the following configuration.
 
